@@ -97,10 +97,10 @@ const taskComponent: React.FC = () => {
         </div>
       </div>
       <style jsx>{`
-      .task-item {
-        border-bottom: 3px solid #191970;
-        padding-bottom: 3px;
-      }
+        .task-item {
+          border-bottom: 3px solid #191970;
+          padding-bottom: 3px;
+        }
       `}</style>
     </div>
   );
