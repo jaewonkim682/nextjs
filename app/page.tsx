@@ -1,11 +1,10 @@
-"use client";
 
 import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
 import { IoTrashBinSharp } from "react-icons/io5";
 import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
 import styles from "./taskComponent.module.css";
 
-const taskComponent: React.FC = () => {
+const TaskComponent: React.FC = () => {
   const [task, setTask] = useState("");
   const [tasksList, setTasksList] = useState<string[]>(() => {
     if (typeof window !== "undefined") {
@@ -105,4 +104,4 @@ const taskComponent: React.FC = () => {
     </div>
   );
 };
-export default taskComponent;
+export default TaskComponent;
