@@ -52,9 +52,6 @@ const taskComponent: React.FC = () => {
       previcon.map((clicked, i) => (i === index ? !clicked : clicked))
     );
   };
-  const getTypingPosgitition = (index: number) => {
-    return "${index * 50}px";
-  };
 
   return (
     <div className="flex flex-col items-center justify-center">
@@ -87,7 +84,7 @@ const taskComponent: React.FC = () => {
               <p
                 className={`${
                   taskDone[index] ? "line-through " : ""
-                }  flex gap-6`}
+                }  flex gap-6 task-item`}
               >
                 {item}
               </p>
@@ -99,8 +96,13 @@ const taskComponent: React.FC = () => {
           ))}
         </div>
       </div>
+      <style jsx>{`
+      .task-item {
+        border-bottom: 3px solid #191970;
+        padding-bottom: 3px;
+      }
+      `}</style>
     </div>
   );
 };
-
 export default taskComponent;
