@@ -1,72 +1,106 @@
 "use client";
 
-import React, { ChangeEvent, MouseEvent, useState } from "react";
+import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
+import { IoTrashBinSharp } from "react-icons/io5";
+import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
 
-const NameInputButton = () => {
-  const [name, setName] = useState("");
-  const [namesList, setNamesList] = useState<string[]>([]);
-
+const taskComponent: React.FC = () => {
+  const [task, setTask] = useState("");
+  const [tasksList, setTasksList] = useState<string[]>(() => {
+    if (typeof window !== "undefined") {
+      const storedTasks = localStorage.getItem("tasksList");
+      return storedTasks ? JSON.parse(storedTasks) : [];
+    }
+    return [];
+  });
+  const [taskDone, setTaskDone] = useState<boolean[]>(() => {
+    return Array(tasksList.length).fill(false);
+  });
+  const [iconClicked, seticonClicked] = useState<boolean[]>(() => {
+    return Array(tasksList.length).fill(false);
+  });
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setName(event.target.value);
+    setTask(event.target.value);
   };
 
   const handleButtonClick = () => {
-    if (name.trim() !== "") {
-      setName("");
-      setNamesList((prevNames) => [...prevNames, name]);
+    if (task.trim() !== "") {
+      setTasksList((prevtasks) => {
+        const updateTasks = [...prevtasks, task];
+        localStorage.setItem("tasksList", JSON.stringify(updateTasks));
+        setTaskDone((prevTaskDones) => [...prevTaskDones, false]);
+        return updateTasks;
+      });
+      setTask("");
     }
   };
-
-  const deleteButtonClick = () => {
-    setNamesList(namesList.slice(0, namesList.length - 1));
-    // const list = namesList;
-    // console.log(list);
-    // setNamesList(list.slice(0, list.length - 1));
+  const insertTasks = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleButtonClick();
+    }
+  };
+  const taskDeleteButton = (index: number) => {
+    setTasksList((taskLsts) => taskLsts.filter((_, i) => i !== index));
+    setTaskDone((taskDone) => taskDone.filter((_, i) => i !== index));
   };
 
-  const taskDeleteButton = (index: number) => {
-    setNamesList((taskLsts) => taskLsts.filter((_, i) => i !== index));
+  const haveDoneThis = (index: number) => {
+    setTaskDone((prevTaskDones) =>
+      prevTaskDones.map((done, i) => (i === index ? !done : done))
+    );
+    seticonClicked((previcon) =>
+      previcon.map((clicked, i) => (i === index ? !clicked : clicked))
+    );
+  };
+  const getTypingPosgitition = (index: number) => {
+    return "${index * 50}px";
   };
 
   return (
-    <div>
-      <button
-        className="absolute top-0 left-96 underline bg-sky-400"
-        onClick={handleButtonClick}
-      >
-        Add Task
-      </button>
-      <button
-        className="absolute top-0 left-0 underline bg-red-400"
-        onClick={deleteButtonClick}
-      >
-        Delete Task
-      </button>
-      <input
-        className="absolute top-0 right-96 bg-slate-300"
-        type="text"
-        placeholder="Type your name"
-        value={name}
-        onChange={handleInputChange}
-      />
-      <div>
-        <h2 className="absolute top-10 left-96 bg-emerald-400"> Task List: </h2>
-        <ul className="absolute top-16 left-96 text-lg">
-          {namesList.map((item, index) => (
-            <li key={index}>
-              {item}
-              <button
-                className="underline bg-red-400"
-                onClick={() => taskDeleteButton(index)}
+    <div className="flex flex-col items-center justify-center">
+      <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
+      <div className="flex gap-4">
+        <input
+          className=" bg-slate-300"
+          type="text"
+          placeholder="Type your task"
+          value={task}
+          onChange={handleInputChange}
+          onKeyDown={insertTasks}
+        />
+      </div>
+      <div className="text-center">
+        <div className="flex flex-col gap-4">
+          {tasksList.map((item, index) => (
+            <div key={index} className="flex items-center gap-4">
+              {iconClicked[index] ? (
+                <FaRegCheckSquare
+                  className="hover:cursor-pointer hover:scale-150 transition "
+                  onClick={() => haveDoneThis(index)}
+                />
+              ) : (
+                <FaRegSquare
+                  className="hover:cursor-pointer hover:scale-150 transition"
+                  onClick={() => haveDoneThis(index)}
+                />
+              )}
+              <p
+                className={`${
+                  taskDone[index] ? "line-through " : ""
+                }  flex gap-6`}
               >
-                Delete Task
-              </button>
-            </li>
+                {item}
+              </p>
+              <IoTrashBinSharp
+                className="hover:cursor-pointer hover:scale-150 transition"
+                onClick={() => taskDeleteButton(index)}
+              />
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
 };
 
-export default NameInputButton;
+export default taskComponent;
