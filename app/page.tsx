@@ -3,6 +3,7 @@
 import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
 import { IoTrashBinSharp } from "react-icons/io5";
 import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
+import styles from "./taskComponent.module.css";
 
 const taskComponent: React.FC = () => {
   const [task, setTask] = useState("");
@@ -55,7 +56,9 @@ const taskComponent: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center">
+      <h3>simple but essential</h3>
       <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
+      <h3>click enter</h3>
       <div className="flex gap-4">
         <input
           className=" bg-slate-300"
@@ -84,7 +87,7 @@ const taskComponent: React.FC = () => {
               <p
                 className={`${
                   taskDone[index] ? "line-through " : ""
-                }  flex gap-6 task-item`}
+                }  flex gap-6 ${styles["task-item"]}`}
               >
                 {item}
               </p>
@@ -97,10 +100,7 @@ const taskComponent: React.FC = () => {
         </div>
       </div>
       <style jsx>{`
-        .task-item {
-          border-bottom: 3px solid #191970;
-          padding-bottom: 3px;
-        }
+        ${styles["task-item"]}
       `}</style>
     </div>
   );
