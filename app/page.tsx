@@ -1,3 +1,4 @@
+"use client";
 
 import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
 import { IoTrashBinSharp } from "react-icons/io5";
@@ -98,7 +99,7 @@ const TaskComponent: React.FC = () => {
           ))}
         </div>
       </div>
-      <style jsx>{`
+      <style>{`
         ${styles["task-item"]}
       `}</style>
     </div>
