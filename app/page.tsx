@@ -17,7 +17,7 @@ const TaskComponent: React.FC = () => {
   const [taskDone, setTaskDone] = useState<boolean[]>(() => {
     return Array(tasksList.length).fill(false);
   });
-  const [iconClicked, seticonClicked] = useState<boolean[]>(() => {
+  const [iconClicked, setIconClicked] = useState<boolean[]>(() => {
     return Array(tasksList.length).fill(false);
   });
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -39,6 +39,7 @@ const TaskComponent: React.FC = () => {
     if (event.key === "Enter") {
       handleButtonClick();
     }
+    setIconClicked((previous) => [...previous, false]);
   };
   const taskDeleteButton = (index: number) => {
     setTasksList((taskLsts) => taskLsts.filter((_, i) => i !== index));
@@ -49,7 +50,7 @@ const TaskComponent: React.FC = () => {
     setTaskDone((prevTaskDones) =>
       prevTaskDones.map((done, i) => (i === index ? !done : done))
     );
-    seticonClicked((previcon) =>
+    setIconClicked((previcon) =>
       previcon.map((clicked, i) => (i === index ? !clicked : clicked))
     );
   };
