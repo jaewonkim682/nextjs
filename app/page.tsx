@@ -4,14 +4,16 @@ import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
 import { IoTrashBinSharp } from "react-icons/io5";
 import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
 import styles from "./taskComponent.module.css";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = "https://kroefhdomebekbuyzdlp.supabase.co";
+const supabaseKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtyb2VmaGRvbWViZWtidXl6ZGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI5OTQ4MDEsImV4cCI6MjAxODU3MDgwMX0.DsWkQAyMXbQ7qn0XDjZk3LUeRiujOfxU5FUUGH7t55s";
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TaskComponent: React.FC = () => {
   const [task, setTask] = useState("");
   const [tasksList, setTasksList] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedTasks = localStorage.getItem("tasksList");
-      return storedTasks ? JSON.parse(storedTasks) : [];
-    }
     return [];
   });
   const [taskDone, setTaskDone] = useState<boolean[]>(() => {
@@ -23,36 +25,94 @@ const TaskComponent: React.FC = () => {
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     setTask(event.target.value);
   };
+  const fetehTasks = async () => {
+    try {
+      const { data, error } = await supabase.from("tasks").select("*");
+      if (error) {
+        throw error;
+      }
 
-  const handleButtonClick = () => {
-    if (task.trim() !== "") {
-      setTasksList((prevtasks) => {
-        const updateTasks = [...prevtasks, task];
-        localStorage.setItem("tasksList", JSON.stringify(updateTasks));
-        setTaskDone((prevTaskDones) => [...prevTaskDones, false]);
-        return updateTasks;
-      });
-      setTask("");
+      setTasksList(data.map((task) => task.title));
+      setTaskDone(data.map((task) => task.done));
+      setIconClicked(data.map(() => false));
+    } catch (error) {
+      console.error("Error fetching tasks:", error.message);
     }
   };
+
+  useEffect(() => {
+    fetehTasks();
+  }, []);
+
+  const handleButtonClick = async () => {
+    if (task.trim() !== "") {
+      try {
+        const { data, error } = await supabase
+          .from("tasks")
+          .upsert([
+            {
+              title: task,
+            },
+          ])
+          .select();
+        if (error) {
+          throw error;
+        }
+        if (data) {
+          setTasksList((prevTasks) => [...prevTasks, data[0].title]);
+          setTaskDone((prevTaskDone) => [...prevTaskDone, false]);
+          setIconClicked((prevIconClicked) => [...prevIconClicked, false]);
+          setTask("");
+        } else {
+          console.error("No data returned after upsert operation");
+        }
+      } catch (error) {
+        console.error("Error adding task:", error.message);
+      }
+    }
+  };
+
   const insertTasks = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       handleButtonClick();
+      setIconClicked((previous) => [...previous, false]);
     }
-    setIconClicked((previous) => [...previous, false]);
   };
-  const taskDeleteButton = (index: number) => {
-    setTasksList((taskLsts) => taskLsts.filter((_, i) => i !== index));
-    setTaskDone((taskDone) => taskDone.filter((_, i) => i !== index));
+  const taskDeleteButton = async (index: number) => {
+    try {
+      await supabase.from("tasks").delete().eq("title", tasksList[index]);
+      setTasksList((taskLsts) => taskLsts.filter((_, i) => i !== index));
+      setTaskDone((taskDone) => taskDone.filter((_, i) => i !== index));
+      setIconClicked((prevIconCLicked) =>
+        prevIconCLicked.filter((_, i) => i !== index)
+      );
+    } catch (error) {
+      console.error("Error deleting task: ", error.message);
+    }
   };
 
-  const haveDoneThis = (index: number) => {
-    setTaskDone((prevTaskDones) =>
-      prevTaskDones.map((done, i) => (i === index ? !done : done))
-    );
-    setIconClicked((previcon) =>
-      previcon.map((clicked, i) => (i === index ? !clicked : clicked))
-    );
+  const haveDoneThis = async (index: number) => {
+    try {
+      await supabase
+        .from("tasks")
+        .update({ done: !taskDone[index] })
+        .eq("title", tasksList[index]);
+      setTaskDone((prevTaskDones) =>
+        prevTaskDones.map((done, i) => (i === index ? !done : done))
+      );
+      setIconClicked((previcon) =>
+        previcon.map((clicked, i) => (i === index ? !clicked : clicked))
+      );
+    } catch (error) {
+      console.error("Error updating task:", error.message);
+    }
+  };
+
+  const truncateText = (text, maxLength) => {
+    if (text.length > maxLength) {
+      return `${text.slice(0, maxLength)}\n${text.slice(maxLength)}`;
+    }
+    return text;
   };
 
   return (
@@ -73,27 +133,39 @@ const TaskComponent: React.FC = () => {
       <div className="text-center">
         <div className="flex flex-col gap-4">
           {tasksList.map((item, index) => (
-            <div key={index} className="flex items-center gap-4">
-              {iconClicked[index] ? (
-                <FaRegCheckSquare
-                  className="hover:cursor-pointer hover:scale-150 transition "
-                  onClick={() => haveDoneThis(index)}
-                />
-              ) : (
-                <FaRegSquare
-                  className="hover:cursor-pointer hover:scale-150 transition"
-                  onClick={() => haveDoneThis(index)}
-                />
-              )}
-              <p
-                className={`${
-                  taskDone[index] ? "line-through " : ""
-                }  flex gap-6 ${styles["task-item"]}`}
-              >
-                {item}
-              </p>
+            <div key={index} className={`${styles["task-item-container"]}`}>
+              <div className="flex items-center gap-4">
+                {iconClicked[index] ? (
+                  <FaRegCheckSquare
+                    className="hover:cursor-pointer hover:scale-150 transition "
+                    onClick={() => haveDoneThis(index)}
+                  />
+                ) : (
+                  <FaRegSquare
+                    className="hover:cursor-pointer hover:scale-150 transition"
+                    onClick={() => haveDoneThis(index)}
+                  />
+                )}
+                <p
+                  className={`${
+                    taskDone[index] ? "line-through " : ""
+                  }  flex gap-8 ${styles["task-item"]}`}
+                >
+                  {item.length > 15 ? (
+                    <>
+                      {item.slice(0, 15)}
+                      <br />
+                      {item.slice(15, 30)}
+                      <br />
+                      {item.slice(30)}
+                    </>
+                  ) : (
+                    item
+                  )}
+                </p>
+              </div>
               <IoTrashBinSharp
-                className="hover:cursor-pointer hover:scale-150 transition"
+                className="hover:cursor-pointer hover:scale-150 transition ml-4"
                 onClick={() => taskDeleteButton(index)}
               />
             </div>
