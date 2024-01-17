@@ -53,13 +53,6 @@ const TaskComponent: React.FC = () => {
   }, []);
 
   const handleButtonClick = async () => {
-    if (task.length >= 10) {
-      window.alert(
-        "You are about to add more then 10 tasks. Stop planning and to these first ^^b"
-      );
-      return;
-    }
-
     if (task.trim() !== "") {
       try {
         const { data, error }: PostgrestSingleResponse<any[]> = await supabase
@@ -86,6 +79,14 @@ const TaskComponent: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    if (tasksList.length >= 10) {
+      window.alert(
+        "You are about to add more than 10 tasks. Stop planning and do these first ^^b"
+      );
+    }
+  }, [tasksList]);
 
   const insertTasks = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
@@ -123,7 +124,7 @@ const TaskComponent: React.FC = () => {
     }
   };
 
-  const truncateText = (text:string, maxLength:number) => {
+  const truncateText = (text: string, maxLength: number) => {
     if (text.length > maxLength) {
       return `${text.slice(0, maxLength)}\n${text.slice(maxLength)}`;
     }
