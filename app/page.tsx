@@ -45,6 +45,13 @@ const TaskComponent: React.FC = () => {
   }, []);
 
   const handleButtonClick = async () => {
+    if (task.length >= 10) {
+      window.alert(
+        "You are about to add more then 10 tasks. Stop planning and to these first ^^b"
+      );
+      return;
+    }
+
     if (task.trim() !== "") {
       try {
         const { data, error } = await supabase
