@@ -5,11 +5,17 @@ import { IoTrashBinSharp } from "react-icons/io5";
 import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
 import styles from "./taskComponent.module.css";
 import { createClient } from "@supabase/supabase-js";
+import { PostgrestError, PostgrestSingleResponse } from "@supabase/supabase-js";
 
 const supabaseUrl = "https://kroefhdomebekbuyzdlp.supabase.co";
 const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtyb2VmaGRvbWViZWtidXl6ZGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI5OTQ4MDEsImV4cCI6MjAxODU3MDgwMX0.DsWkQAyMXbQ7qn0XDjZk3LUeRiujOfxU5FUUGH7t55s";
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+interface TaskData {
+  title: string;
+  done: boolean;
+}
 
 const TaskComponent: React.FC = () => {
   const [task, setTask] = useState("");
@@ -27,7 +33,9 @@ const TaskComponent: React.FC = () => {
   };
   const fetehTasks = async () => {
     try {
-      const { data, error } = await supabase.from("tasks").select("*");
+      const { data, error }: PostgrestSingleResponse<any[]> = await supabase
+        .from("tasks")
+        .select("*");
       if (error) {
         throw error;
       }
@@ -36,7 +44,7 @@ const TaskComponent: React.FC = () => {
       setTaskDone(data.map((task) => task.done));
       setIconClicked(data.map(() => false));
     } catch (error) {
-      console.error("Error fetching tasks:", error.message);
+      console.error("Error fetching tasks:", (error as PostgrestError).message);
     }
   };
 
@@ -54,7 +62,7 @@ const TaskComponent: React.FC = () => {
 
     if (task.trim() !== "") {
       try {
-        const { data, error } = await supabase
+        const { data, error }: PostgrestSingleResponse<any[]> = await supabase
           .from("tasks")
           .upsert([
             {
@@ -74,7 +82,7 @@ const TaskComponent: React.FC = () => {
           console.error("No data returned after upsert operation");
         }
       } catch (error) {
-        console.error("Error adding task:", error.message);
+        console.error("Error adding task:", (error as Error).message);
       }
     }
   };
@@ -94,7 +102,7 @@ const TaskComponent: React.FC = () => {
         prevIconCLicked.filter((_, i) => i !== index)
       );
     } catch (error) {
-      console.error("Error deleting task: ", error.message);
+      console.error("Error deleting task: ", (error as PostgrestError).message);
     }
   };
 
@@ -111,11 +119,11 @@ const TaskComponent: React.FC = () => {
         previcon.map((clicked, i) => (i === index ? !clicked : clicked))
       );
     } catch (error) {
-      console.error("Error updating task:", error.message);
+      console.error("Error updating task:", (error as PostgrestError).message);
     }
   };
 
-  const truncateText = (text, maxLength) => {
+  const truncateText = (text:string, maxLength:number) => {
     if (text.length > maxLength) {
       return `${text.slice(0, maxLength)}\n${text.slice(maxLength)}`;
     }
