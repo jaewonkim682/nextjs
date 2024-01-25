@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ChangeEvent, MouseEvent, useState, useEffect } from "react";
+import Modal from "react-modal";
 import { IoTrashBinSharp } from "react-icons/io5";
 import { FaRegSquare, FaRegCheckSquare } from "react-icons/fa";
 import styles from "./taskComponent.module.css";
@@ -18,10 +19,129 @@ interface TaskData {
 }
 
 const TaskComponent: React.FC = () => {
+  const [user, setUser] = useState(null);
+  const [ID, setID] = useState("");
+  const [password, setPassword] = useState("");
+  const [modelIsOpen, setModelIsOpen] = useState(false);
+  const [registerID, setRegisterID] = useState("");
+  const [registerPassword, setRegisterPassword] = useState("");
+
+  useEffect(() => {
+    const session = supabase.auth;
+    setUser(session?.user ?? null);
+  }, []);
+
+  const openModel = () => {
+    setModelIsOpen(true);
+  };
+
+  const closeModel = () => {
+    setModelIsOpen(false);
+  };
+
+  const handleRegister = async () => {
+    try {
+      // Check if the "users" table exists
+      const { data: usersTable, error: fetchTableError } = await supabase
+        .from("users")
+        .select();
+
+      console.error(fetchTableError);
+
+      if (fetchTableError) {
+        throw fetchTableError;
+      }
+
+      // If the table doesn't exist, create it
+      if (!usersTable) {
+        const { error: createTableError } = await supabase
+          .from("users")
+          .create({ ID: "sampleID", password: "samplePassword" });
+
+        if (createTableError) {
+          throw createTableError;
+        }
+      }
+
+      // Check if the user with the provided ID already exists
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("users")
+        .select("ID")
+        .eq("ID", ID);
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      if (existingUser.length > 0) {
+        window.alert("This ID already exists");
+        return;
+      }
+
+      // Register the user
+      const { data: newUser, error: registerError } = await supabase
+        .from("users")
+        .insert([
+          {
+            ID,
+            password,
+          },
+        ]);
+
+      if (registerError) {
+        throw registerError;
+      }
+
+      window.alert("User registered successfully:", newUser);
+      setUser(newUser);
+    } catch (error) {
+      console.error("Error registering user:", error);
+      window.alert("Error registering user:", error.message);
+    }
+  };
+
+  const handleLogin = async () => {
+    try {
+      const { data: user, error } = await supabase
+        .from("users")
+        .select("ID, password")
+        .eq("ID", ID)
+        .eq("password", password);
+
+      if (error) {
+        throw error;
+      }
+
+      if (!user) {
+        window.alert("Invalid ID or password");
+        return;
+      }
+
+      window.alert("Logged in successfully", user);
+      setUser(user);
+    } catch (error) {
+      window.alert("Error logging in:", (error as PostgrestError).message);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+      setUser(null);
+    } catch (error) {
+      window.alert("Error Logging out:", (error as PostgrestError).message);
+    }
+  };
+
   const [task, setTask] = useState("");
   const [tasksList, setTasksList] = useState<string[]>(() => {
     return [];
   });
+
   const [taskDone, setTaskDone] = useState<boolean[]>(() => {
     return Array(tasksList.length).fill(false);
   });
@@ -109,10 +229,11 @@ const TaskComponent: React.FC = () => {
 
   const haveDoneThis = async (index: number) => {
     try {
+      const taskId = tasksList[index]; // Assuming your taskList is an array of task IDs
       await supabase
         .from("tasks")
         .update({ done: !taskDone[index] })
-        .eq("title", tasksList[index]);
+        .eq("id", taskId); // Use the task ID for the update
       setTaskDone((prevTaskDones) =>
         prevTaskDones.map((done, i) => (i === index ? !done : done))
       );
@@ -132,66 +253,129 @@ const TaskComponent: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <h3>simple but essential</h3>
-      <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
-      <h3>click enter</h3>
-      <div className="flex gap-4">
-        <input
-          className=" bg-slate-300"
-          type="text"
-          placeholder="Type your task"
-          value={task}
-          onChange={handleInputChange}
-          onKeyDown={insertTasks}
-        />
-      </div>
-      <div className="text-center">
-        <div className="flex flex-col gap-4">
-          {tasksList.map((item, index) => (
-            <div key={index} className={`${styles["task-item-container"]}`}>
-              <div className="flex items-center gap-4">
-                {iconClicked[index] ? (
-                  <FaRegCheckSquare
-                    className="hover:cursor-pointer hover:scale-150 transition "
-                    onClick={() => haveDoneThis(index)}
-                  />
-                ) : (
-                  <FaRegSquare
-                    className="hover:cursor-pointer hover:scale-150 transition"
-                    onClick={() => haveDoneThis(index)}
-                  />
-                )}
-                <p
-                  className={`${
-                    taskDone[index] ? "line-through " : ""
-                  }  flex gap-8 ${styles["task-item"]}`}
-                >
-                  {item.length > 15 ? (
-                    <>
-                      {item.slice(0, 15)}
-                      <br />
-                      {item.slice(15, 30)}
-                      <br />
-                      {item.slice(30)}
-                    </>
-                  ) : (
-                    item
-                  )}
-                </p>
-              </div>
-              <IoTrashBinSharp
-                className="hover:cursor-pointer hover:scale-150 transition ml-4"
-                onClick={() => taskDeleteButton(index)}
-              />
-            </div>
-          ))}
+    <div>
+      {user ? (
+        <div>
+          <p>Welcome, {user.ID}!</p>
+          <button onClick={handleLogout}>Logout</button>
         </div>
-      </div>
-      <style>{`
+      ) : (
+        <div>
+          <button onClick={openModel}>Login/Register</button>
+        </div>
+      )}
+      <Modal
+        isOpen={modelIsOpen}
+        onRequestClose={closeModel}
+        contentLabel="Login/Register Model"
+      >
+        <div>
+          <button onClick={closeModel}>Close</button>
+          <div>
+            <label>
+              ID:
+              <input
+                type="text"
+                value={ID}
+                onChange={(e) => setID(e.target.value)}
+              />
+            </label>
+            <br />
+            <label>
+              Password:
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </label>
+            <button onClick={handleLogin}>Login</button>
+          </div>
+          <div>
+            <label>
+              ID:
+              <input
+                type="text"
+                value={registerID}
+                onChange={(e) => setRegisterID(e.target.value)}
+              />
+            </label>
+            <br />
+            <label>
+              Password:
+              <input
+                type="password"
+                value={registerPassword}
+                onChange={(e) => setRegisterPassword(e.target.value)}
+              />
+            </label>
+            <br />
+            <button onClick={handleRegister}>Register</button>
+          </div>
+        </div>
+      </Modal>
+      <div className="flex flex-col items-center justify-center">
+        <h3>simple but essential</h3>
+        <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
+        <h3>click enter</h3>
+        <div className="flex gap-4">
+          <input
+            className=" bg-slate-300"
+            type="text"
+            placeholder="Type your task"
+            value={task}
+            onChange={handleInputChange}
+            onKeyDown={insertTasks}
+          />
+        </div>
+        <div className="text-center">
+          <div className="flex flex-col gap-4">
+            {tasksList.map((item, index) => (
+              <div key={index} className={`${styles["task-item-container"]}`}>
+                <div className="flex items-center gap-4">
+                  {iconClicked[index] ? (
+                    <FaRegCheckSquare
+                      className="hover:cursor-pointer hover:scale-150 transition "
+                      onClick={() => haveDoneThis(index)}
+                    />
+                  ) : (
+                    <FaRegSquare
+                      className="hover:cursor-pointer hover:scale-150 transition"
+                      onClick={() => haveDoneThis(index)}
+                    />
+                  )}
+                  <p
+                    className={`${
+                      taskDone[index] ? "line-through " : ""
+                    }  flex gap-8 ${styles["task-item"]}`}
+                  >
+                    {item.length > 15 ? (
+                      <>
+                        {item.slice(0, 15)}
+                        <br />
+                        {item.slice(15, 30)}
+                        <br />
+                        {item.slice(30)}
+                      </>
+                    ) : (
+                      item
+                    )}
+                  </p>
+                </div>
+                <IoTrashBinSharp
+                  className="hover:cursor-pointer hover:scale-150 transition ml-4"
+                  onClick={() => taskDeleteButton(index)}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+        <style>{`
         ${styles["task-item"]}
       `}</style>
+      </div>
     </div>
   );
 };
+
 export default TaskComponent;
