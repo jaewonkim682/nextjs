@@ -14,6 +14,7 @@ const supabaseKey =
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 interface TaskData {
+  user_id: string;
   title: string;
   done: boolean;
 }
@@ -41,33 +42,16 @@ const TaskComponent: React.FC = () => {
 
   const handleRegister = async () => {
     try {
-      // Check if the "users" table exists
-      const { data: usersTable, error: fetchTableError } = await supabase
-        .from("users")
-        .select();
-
-      console.error(fetchTableError);
-
-      if (fetchTableError) {
-        throw fetchTableError;
+      // Check if ID and password are not empty
+      if (!registerID || !registerPassword) {
+        window.alert("ID and password are required.");
+        return;
       }
-
-      // If the table doesn't exist, create it
-      if (!usersTable) {
-        const { error: createTableError } = await supabase
-          .from("users")
-          .create({ ID: "sampleID", password: "samplePassword" });
-
-        if (createTableError) {
-          throw createTableError;
-        }
-      }
-
       // Check if the user with the provided ID already exists
       const { data: existingUser, error: fetchError } = await supabase
         .from("users")
         .select("ID")
-        .eq("ID", ID);
+        .eq("ID", registerID);
 
       if (fetchError) {
         throw fetchError;
@@ -81,10 +65,10 @@ const TaskComponent: React.FC = () => {
       // Register the user
       const { data: newUser, error: registerError } = await supabase
         .from("users")
-        .insert([
+        .upsert([
           {
-            ID,
-            password,
+            ID: registerID,
+            password: registerPassword,
           },
         ]);
 
@@ -94,6 +78,7 @@ const TaskComponent: React.FC = () => {
 
       window.alert("User registered successfully:", newUser);
       setUser(newUser);
+      closeModel();
     } catch (error) {
       console.error("Error registering user:", error);
       window.alert("Error registering user:", error.message);
@@ -102,6 +87,10 @@ const TaskComponent: React.FC = () => {
 
   const handleLogin = async () => {
     try {
+      if (!ID || !password) {
+        window.alert("ID and password are required.");
+        return;
+      }
       const { data: user, error } = await supabase
         .from("users")
         .select("ID, password")
@@ -119,6 +108,7 @@ const TaskComponent: React.FC = () => {
 
       window.alert("Logged in successfully", user);
       setUser(user);
+      closeModel();
     } catch (error) {
       window.alert("Error logging in:", (error as PostgrestError).message);
     }
@@ -155,7 +145,8 @@ const TaskComponent: React.FC = () => {
     try {
       const { data, error }: PostgrestSingleResponse<any[]> = await supabase
         .from("tasks")
-        .select("*");
+        .select("*")
+        .eq("user_id", setUser); // Fetch tasks only for the logged-in user
       if (error) {
         throw error;
       }
@@ -179,6 +170,7 @@ const TaskComponent: React.FC = () => {
           .from("tasks")
           .upsert([
             {
+              user_id: ID,
               title: task,
             },
           ])
@@ -243,13 +235,6 @@ const TaskComponent: React.FC = () => {
     } catch (error) {
       console.error("Error updating task:", (error as PostgrestError).message);
     }
-  };
-
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length > maxLength) {
-      return `${text.slice(0, maxLength)}\n${text.slice(maxLength)}`;
-    }
-    return text;
   };
 
   return (
@@ -317,7 +302,7 @@ const TaskComponent: React.FC = () => {
       <div className="flex flex-col items-center justify-center">
         <h3>simple but essential</h3>
         <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
-        <h3>click enter</h3>
+        <h3>Press Enter</h3>
         <div className="flex gap-4">
           <input
             className=" bg-slate-300"
