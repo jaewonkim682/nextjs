@@ -13,14 +13,12 @@ const supabaseKey =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtyb2VmaGRvbWViZWtidXl6ZGxwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDI5OTQ4MDEsImV4cCI6MjAxODU3MDgwMX0.DsWkQAyMXbQ7qn0XDjZk3LUeRiujOfxU5FUUGH7t55s";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface TaskData {
-  user_id: string;
-  title: string;
-  done: boolean;
-}
-
 const TaskComponent: React.FC = () => {
-  const [user, setUser] = useState(null);
+  interface user {
+    ID: string;
+    password: string;
+  }
+  const [user, setUser] = useState<any | null>(null);
   const [ID, setID] = useState("");
   const [password, setPassword] = useState("");
   const [modelIsOpen, setModelIsOpen] = useState(false);
@@ -28,7 +26,7 @@ const TaskComponent: React.FC = () => {
   const [registerPassword, setRegisterPassword] = useState("");
 
   useEffect(() => {
-    const session = supabase.auth;
+    const session = supabase.auth as unknown as { user: user };
     setUser(session?.user ?? null);
   }, []);
 
@@ -76,13 +74,17 @@ const TaskComponent: React.FC = () => {
         throw registerError;
       }
 
-      window.alert("User registered successfully:", newUser);
+      window.alert("User registered successfully:" + JSON.stringify(newUser));
       setUser(newUser);
       closeModel();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error registering user:", error);
-      window.alert("Error registering user:", error.message);
+      window.alert("Error registering user:" + JSON.stringify(error.message));
     }
+    setID("");
+    setPassword("");
+    setRegisterID("");
+    setRegisterPassword("");
   };
 
   const handleLogin = async () => {
@@ -101,17 +103,21 @@ const TaskComponent: React.FC = () => {
         throw error;
       }
 
-      if (!user) {
+      if (user.length == 0) {
         window.alert("Invalid ID or password");
         return;
       }
 
-      window.alert("Logged in successfully", user);
+      window.alert("Logged in successfully" + JSON.stringify(user));
       setUser(user);
       closeModel();
-    } catch (error) {
-      window.alert("Error logging in:", (error as PostgrestError).message);
+    } catch (error: any) {
+      window.alert("Error logging in:" + JSON.stringify(error.message));
     }
+    setID("");
+    setPassword("");
+    setRegisterID("");
+    setRegisterPassword("");
   };
 
   const handleLogout = async () => {
@@ -122,9 +128,14 @@ const TaskComponent: React.FC = () => {
         throw error;
       }
       setUser(null);
-    } catch (error) {
-      window.alert("Error Logging out:", (error as PostgrestError).message);
+      setID("");
+    } catch (error: any) {
+      window.alert("Error Logging out:" + JSON.stringify(error.message));
     }
+    setID("");
+    setPassword("");
+    setRegisterID("");
+    setRegisterPassword("");
   };
 
   const [task, setTask] = useState("");
@@ -146,7 +157,8 @@ const TaskComponent: React.FC = () => {
       const { data, error }: PostgrestSingleResponse<any[]> = await supabase
         .from("tasks")
         .select("*")
-        .eq("user_id", setUser); // Fetch tasks only for the logged-in user
+        .eq("user_ID", ID); // Fetch tasks only for the logged-in user
+
       if (error) {
         throw error;
       }
@@ -161,7 +173,7 @@ const TaskComponent: React.FC = () => {
 
   useEffect(() => {
     fetehTasks();
-  }, []);
+  }, [ID]);
 
   const handleButtonClick = async () => {
     if (task.trim() !== "") {
@@ -170,7 +182,7 @@ const TaskComponent: React.FC = () => {
           .from("tasks")
           .upsert([
             {
-              user_id: ID,
+              user_ID: ID,
               title: task,
             },
           ])
@@ -226,6 +238,7 @@ const TaskComponent: React.FC = () => {
         .from("tasks")
         .update({ done: !taskDone[index] })
         .eq("id", taskId); // Use the task ID for the update
+
       setTaskDone((prevTaskDones) =>
         prevTaskDones.map((done, i) => (i === index ? !done : done))
       );
@@ -241,7 +254,8 @@ const TaskComponent: React.FC = () => {
     <div>
       {user ? (
         <div>
-          <p>Welcome, {user.ID}!</p>
+          <p>Welcome User!</p>
+          <p>Have a nice day if you can!</p>
           <button onClick={handleLogout}>Logout</button>
         </div>
       ) : (
@@ -276,6 +290,7 @@ const TaskComponent: React.FC = () => {
             </label>
             <button onClick={handleLogin}>Login</button>
           </div>
+          <br />
           <div>
             <label>
               ID:
@@ -294,7 +309,6 @@ const TaskComponent: React.FC = () => {
                 onChange={(e) => setRegisterPassword(e.target.value)}
               />
             </label>
-            <br />
             <button onClick={handleRegister}>Register</button>
           </div>
         </div>
