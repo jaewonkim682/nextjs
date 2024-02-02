@@ -81,7 +81,7 @@ const TaskComponent: React.FC = () => {
       console.error("Error registering user:", error);
       window.alert("Error registering user:" + JSON.stringify(error.message));
     }
-    setID("");
+
     setPassword("");
     setRegisterID("");
     setRegisterPassword("");
@@ -114,7 +114,7 @@ const TaskComponent: React.FC = () => {
     } catch (error: any) {
       window.alert("Error logging in:" + JSON.stringify(error.message));
     }
-    setID("");
+
     setPassword("");
     setRegisterID("");
     setRegisterPassword("");
@@ -177,29 +177,43 @@ const TaskComponent: React.FC = () => {
 
   const handleButtonClick = async () => {
     if (task.trim() !== "") {
+      if (ID.length != 0) {
+        try {
+          const { data, error }: PostgrestSingleResponse<any[]> = await supabase
+            .from("tasks")
+            .upsert([
+              {
+                user_ID: ID,
+                title: task,
+              },
+            ])
+            .select();
+          if (error) {
+            throw error;
+          }
+          if (data) {
+            setTasksList((prevTasks) => [...prevTasks, data[0].title]);
+            setTaskDone((prevTaskDone) => [...prevTaskDone, false]);
+            setIconClicked((prevIconClicked) => [...prevIconClicked, false]);
+            setTask("");
+          } else {
+            console.error("No data returned after upsert operation");
+          }
+        } catch (error) {
+          console.error("Error adding task:", (error as Error).message);
+        }
+      }
+      window.alert("log in to add tasks");
+      setTask("");
+      setTasksList([]);
       try {
-        const { data, error }: PostgrestSingleResponse<any[]> = await supabase
-          .from("tasks")
-          .upsert([
-            {
-              user_ID: ID,
-              title: task,
-            },
-          ])
-          .select();
-        if (error) {
-          throw error;
-        }
-        if (data) {
-          setTasksList((prevTasks) => [...prevTasks, data[0].title]);
-          setTaskDone((prevTaskDone) => [...prevTaskDone, false]);
-          setIconClicked((prevIconClicked) => [...prevIconClicked, false]);
-          setTask("");
-        } else {
-          console.error("No data returned after upsert operation");
-        }
+        await supabase.from("tasks").delete().eq("user_ID", "");
+        setTasksList([]);
       } catch (error) {
-        console.error("Error adding task:", (error as Error).message);
+        console.error(
+          "Error deleting task: ",
+          (error as PostgrestError).message
+        );
       }
     }
   };
