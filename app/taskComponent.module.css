@@ -1,13 +1,16 @@
 /* taskComponent.module.css */
 
 .task-item {
-    /* border-bottom: 3px solid #191970; */
-    padding-bottom: 3px;
-  }
-  
-  .task-item-container {
-    display: flex;
-    align-items: right;
-    justify-content: space-between;
-  }
-  
+  /* border-bottom: 3px solid #191970; */
+  padding-bottom: 3px;
+}
+
+.task-item-container {
+  display: flex;
+  align-items: right;
+  justify-content: space-between;
+}
+
+.background-colour {
+  background-color: lightblue;
+}

@@ -177,7 +177,7 @@ const TaskComponent: React.FC = () => {
 
   const handleButtonClick = async () => {
     if (task.trim() !== "") {
-      if (ID.length != 0) {
+      if (ID.length != 0 && tasksList.length < 10) {
         try {
           const { data, error }: PostgrestSingleResponse<any[]> = await supabase
             .from("tasks")
@@ -203,33 +203,32 @@ const TaskComponent: React.FC = () => {
           console.error("Error adding task:", (error as Error).message);
         }
       }
-      window.alert("log in to add tasks");
-      setTask("");
-      setTasksList([]);
-      try {
-        await supabase.from("tasks").delete().eq("user_ID", "");
+      if (ID.length == 0) {
+        window.alert("log in to add tasks");
+        setTask("");
         setTasksList([]);
-      } catch (error) {
-        console.error(
-          "Error deleting task: ",
-          (error as PostgrestError).message
+      }
+      if (tasksList.length >= 10) {
+        window.alert(
+          "You are about to add more than 10 tasks. Stop planning and do these first ^^b"
         );
       }
+      //Need to move the below code to anther const
+      // try {
+      //   await supabase.from("tasks").delete().eq("user_ID", "");
+      //   setTasksList([]);
+      // } catch (error) {
+      //   console.error(
+      //     "Error deleting task: ",
+      //     (error as PostgrestError).message
+      //   );
+      // }
     }
   };
-
-  useEffect(() => {
-    if (tasksList.length >= 10) {
-      window.alert(
-        "You are about to add more than 10 tasks. Stop planning and do these first ^^b"
-      );
-    }
-  }, [tasksList]);
 
   const insertTasks = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Enter") {
       handleButtonClick();
-      setIconClicked((previous) => [...previous, false]);
     }
   };
   const taskDeleteButton = async (index: number) => {
@@ -263,7 +262,6 @@ const TaskComponent: React.FC = () => {
       console.error("Error updating task:", (error as PostgrestError).message);
     }
   };
-
   return (
     <div>
       {user ? (
@@ -327,7 +325,7 @@ const TaskComponent: React.FC = () => {
           </div>
         </div>
       </Modal>
-      <div className="flex flex-col items-center justify-center">
+      <div className="flex flex-col items-center justify-center;">
         <h3>simple but essential</h3>
         <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
         <h3>Press Enter</h3>
