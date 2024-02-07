@@ -21,7 +21,8 @@ const TaskComponent: React.FC = () => {
   const [user, setUser] = useState<any | null>(null);
   const [ID, setID] = useState("");
   const [password, setPassword] = useState("");
-  const [modelIsOpen, setModelIsOpen] = useState(false);
+  const [loginModelisOpen, setLoginModelisOpen] = useState(true);
+  const [registerModelisOpen, setRegisterModelisOpen] = useState(false);
   const [registerID, setRegisterID] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
 
@@ -30,12 +31,30 @@ const TaskComponent: React.FC = () => {
     setUser(session?.user ?? null);
   }, []);
 
-  const openModel = () => {
-    setModelIsOpen(true);
+  const openLoginModel = () => {
+    setLoginModelisOpen(true);
   };
 
-  const closeModel = () => {
-    setModelIsOpen(false);
+  const closeLoginModel = () => {
+    setLoginModelisOpen(false);
+  };
+
+  const openRegisterModel = () => {
+    setRegisterModelisOpen(true);
+  };
+
+  const closeRegisterModel = () => {
+    setRegisterModelisOpen(false);
+  };
+
+  const LogintoRegister = () => {
+    setLoginModelisOpen(false);
+    setRegisterModelisOpen(true);
+  };
+
+  const RegistertoLogin = () => {
+    setLoginModelisOpen(true);
+    setRegisterModelisOpen(false);
   };
 
   const handleRegister = async () => {
@@ -76,7 +95,7 @@ const TaskComponent: React.FC = () => {
 
       window.alert("User registered successfully:" + JSON.stringify(newUser));
       setUser(newUser);
-      closeModel();
+      closeLoginModel();
     } catch (error: any) {
       console.error("Error registering user:", error);
       window.alert("Error registering user:" + JSON.stringify(error.message));
@@ -110,7 +129,7 @@ const TaskComponent: React.FC = () => {
 
       window.alert("Logged in successfully" + JSON.stringify(user));
       setUser(user);
-      closeModel();
+      closeLoginModel();
     } catch (error: any) {
       window.alert("Error logging in:" + JSON.stringify(error.message));
     }
@@ -136,6 +155,7 @@ const TaskComponent: React.FC = () => {
     setPassword("");
     setRegisterID("");
     setRegisterPassword("");
+    setLoginModelisOpen(true);
   };
 
   const [task, setTask] = useState("");
@@ -262,88 +282,36 @@ const TaskComponent: React.FC = () => {
       console.error("Error updating task:", (error as PostgrestError).message);
     }
   };
+  //https://www.9lessons.info/2011/05/tab-style-login-and-signup-with-css.html
   return (
     <div>
       {user ? (
+        //This is for log in case
         <div>
-          <p>Welcome User!</p>
-          <p>Have a nice day if you can!</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
-      ) : (
-        <div>
-          <button onClick={openModel}>Login/Register</button>
-        </div>
-      )}
-      <Modal
-        isOpen={modelIsOpen}
-        onRequestClose={closeModel}
-        contentLabel="Login/Register Model"
-      >
-        <div>
-          <button onClick={closeModel}>Close</button>
           <div>
-            <label>
-              ID:
-              <input
-                type="text"
-                value={ID}
-                onChange={(e) => setID(e.target.value)}
-              />
-            </label>
-            <br />
-            <label>
-              Password:
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-            <button onClick={handleLogin}>Login</button>
+            <p>Welcome User!</p>
+            <p>Have a nice day if you can!</p>
+            <button onClick={handleLogout}>Logout</button>
           </div>
-          <br />
-          <div>
-            <label>
-              ID:
+          <div className="flex flex-col items-center justify-center;">
+            <h3 className={`${styles["background-colour"]}`}>
+              simple but essential
+            </h3>
+            <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
+            <h3>Press Enter</h3>
+            <div className="flex gap-4">
               <input
+                className=" bg-slate-300"
                 type="text"
-                value={registerID}
-                onChange={(e) => setRegisterID(e.target.value)}
+                placeholder="Type your task"
+                value={task}
+                onChange={handleInputChange}
+                onKeyDown={insertTasks}
               />
-            </label>
-            <br />
-            <label>
-              Password:
-              <input
-                type="password"
-                value={registerPassword}
-                onChange={(e) => setRegisterPassword(e.target.value)}
-              />
-            </label>
-            <button onClick={handleRegister}>Register</button>
-          </div>
-        </div>
-      </Modal>
-      <div className="flex flex-col items-center justify-center;">
-        <h3>simple but essential</h3>
-        <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
-        <h3>Press Enter</h3>
-        <div className="flex gap-4">
-          <input
-            className=" bg-slate-300"
-            type="text"
-            placeholder="Type your task"
-            value={task}
-            onChange={handleInputChange}
-            onKeyDown={insertTasks}
-          />
-        </div>
-        <div className="text-center">
-          <div className="flex flex-col gap-4">
-            {tasksList.map((item, index) => (
-              <div key={index} className={`${styles["task-item-container"]}`}>
-                <div className="flex items-center gap-4">
+            </div>
+            <div className="flex flex-col gap-4 text-center rounded-r-lg">
+              {tasksList.map((item, index) => (
+                <div key={index} className={`${styles["task-item-container"]}`}>
                   {iconClicked[index] ? (
                     <FaRegCheckSquare
                       className="hover:cursor-pointer hover:scale-150 transition "
@@ -372,19 +340,131 @@ const TaskComponent: React.FC = () => {
                       item
                     )}
                   </p>
+                  <IoTrashBinSharp
+                    className="hover:cursor-pointer hover:scale-150 transition ml-4"
+                    onClick={() => taskDeleteButton(index)}
+                  />
                 </div>
-                <IoTrashBinSharp
-                  className="hover:cursor-pointer hover:scale-150 transition ml-4"
-                  onClick={() => taskDeleteButton(index)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-        <style>{`
+              ))}
+            </div>
+            <style>{`
         ${styles["task-item"]}
       `}</style>
-      </div>
+          </div>
+        </div>
+      ) : (
+        //This is for log out case
+        <div>
+          <Modal
+            className={`${styles["Modal"]}`}
+            isOpen={loginModelisOpen}
+            // onRequestClose={closeLoginModel}
+            contentLabel="Login Model"
+          >
+            <div className="flex flex-row">
+              <button
+                className={`${styles["switchbutton"]}`}
+                onClick={LogintoRegister}
+              >
+                Register
+              </button>
+              <button
+                className={`${styles["disable"]}`}
+                onClick={RegistertoLogin}
+              >
+                Log In
+              </button>
+            </div>
+            <div id="loginBox" className={`${styles["loginPopup"]}`}>
+              <label>
+                ID
+                <br />
+                <input
+                  type="text"
+                  value={ID}
+                  onChange={(e) => setID(e.target.value)}
+                  className={`${styles["input"]}`}
+                />
+              </label>
+              <br />
+              <label>
+                Password
+                <br />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`${styles["input"]}`}
+                />
+              </label>
+              <button
+                className={`${styles["RegisterLoginButton"]}`}
+                onClick={handleLogin}
+              >
+                Login
+              </button>
+              <p className={`${styles["instruction"]}`}>
+                You need to log in to access the functions that Todo List can
+                offer. If you have not made the account yet, click the regirster
+                button
+              </p>
+            </div>
+          </Modal>
+          <Modal
+            className={`${styles["Modal"]}`}
+            isOpen={registerModelisOpen}
+            // onRequestClose={closeRegisterModel}
+            contentLabel="Register Model"
+          >
+            <div className="flex flex-row">
+              <button
+                className={`${styles["disable"]}`}
+                onClick={LogintoRegister}
+              >
+                Register
+              </button>
+              <button
+                className={`${styles["switchbutton"]}`}
+                onClick={RegistertoLogin}
+              >
+                Log In
+              </button>
+            </div>
+            <div id="registerBox" className={`${styles["loginPopup"]}`}>
+              <label>
+                ID
+                <br />
+                <input
+                  type="text"
+                  value={registerID}
+                  onChange={(e) => setRegisterID(e.target.value)}
+                  className={`${styles["input"]}`}
+                />
+              </label>
+              <br />
+              <label>
+                Password
+                <br />
+                <input
+                  type="password"
+                  value={registerPassword}
+                  onChange={(e) => setRegisterPassword(e.target.value)}
+                  className={`${styles["input"]}`}
+                />
+              </label>
+              <button
+                className={`${styles["RegisterLoginButton"]}`}
+                onClick={handleRegister}
+              >
+                Register
+              </button>
+              <p className={`${styles["instruction"]}`}>
+                Creat an account and enjoy your Todo List
+              </p>
+            </div>
+          </Modal>
+        </div>
+      )}
     </div>
   );
 };
