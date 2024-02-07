@@ -288,15 +288,17 @@ const TaskComponent: React.FC = () => {
       {user ? (
         //This is for log in case
         <div>
-          <div>
-            <p>Welcome User!</p>
-            <p>Have a nice day if you can!</p>
-            <button onClick={handleLogout}>Logout</button>
+          <div className={`${styles["userinfo"]}`}>
+            <p>User Info</p>
+            <p>User ID: {ID}</p>
+            <br />
+            <button className={`${styles["logout"]}`} onClick={handleLogout}>
+              Logout
+            </button>
           </div>
-          <div className="flex flex-col items-center justify-center;">
-            <h3 className={`${styles["background-colour"]}`}>
-              simple but essential
-            </h3>
+          {/* <div className="flex flex-col items-center justify-center;"> */}
+          <div className={`${styles["background"]}`}>
+            <h3>simple but essential</h3>
             <h1 style={{ fontSize: "64px" }}>TO DO LIST</h1>
             <h3>Press Enter</h3>
             <div className="flex gap-4">
@@ -309,7 +311,8 @@ const TaskComponent: React.FC = () => {
                 onKeyDown={insertTasks}
               />
             </div>
-            <div className="flex flex-col gap-4 text-center rounded-r-lg">
+            <br />
+            <div className="flex flex-col gap-4">
               {tasksList.map((item, index) => (
                 <div key={index} className={`${styles["task-item-container"]}`}>
                   {iconClicked[index] ? (
@@ -404,9 +407,8 @@ const TaskComponent: React.FC = () => {
                 Login
               </button>
               <p className={`${styles["instruction"]}`}>
-                You need to log in to access the functions that Todo List can
-                offer. If you have not made the account yet, click the regirster
-                button
+                Log in and get access to all features Todo List can offer. If
+                you have not made the account yet, click the register button
               </p>
             </div>
           </Modal>
@@ -459,7 +461,7 @@ const TaskComponent: React.FC = () => {
                 Register
               </button>
               <p className={`${styles["instruction"]}`}>
-                Creat an account and enjoy your Todo List
+                Creat an account and enjoy your very own Todo List
               </p>
             </div>
           </Modal>
